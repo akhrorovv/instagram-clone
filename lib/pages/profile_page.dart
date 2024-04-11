@@ -2,9 +2,12 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:instagram_clone/pages/signin_page.dart';
+import 'package:instagram_clone/services/auth_service.dart';
 
 import '../models/member_model.dart';
 import '../models/post_model.dart';
+import '../services/db_service.dart';
 import '../services/utils_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -45,30 +48,31 @@ class _ProfilePageState extends State<ProfilePage> {
 
   _showPicker(context) {
     showModalBottomSheet(
-        context: context,
-        builder: (BuildContext bc) {
-          return SafeArea(
-            child: Wrap(
-              children: <Widget>[
-                ListTile(
-                    leading: const Icon(Icons.photo_library),
-                    title: const Text('Pick Photo'),
-                    onTap: () {
-                      _imgFromGallery();
-                      Navigator.of(context).pop();
-                    }),
-                ListTile(
-                  leading: const Icon(Icons.photo_camera),
-                  title: const Text('Take Photo'),
+      context: context,
+      builder: (BuildContext bc) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Pick Photo'),
                   onTap: () {
-                    _imgFromCamera();
+                    _imgFromGallery();
                     Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            ),
-          );
-        });
+                  }),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  _imgFromCamera();
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   _dialogRemovePost(Post post) async {
@@ -88,18 +92,40 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         isLoading = true;
       });
+      _signOutUser();
     }
+  }
+
+  _signOutUser() {
+    AuthService.signOutUser(context);
+    Navigator.pushReplacementNamed(context, SignInPage.id);
+  }
+
+  void _apiLoadMember() {
+    setState(() {
+      isLoading = true;
+    });
+    DBService.loadMember().then((value) => {
+          _showMemberInfo(value),
+        });
+  }
+
+  void _showMemberInfo(Member member) {
+    setState(() {
+      isLoading = false;
+      fullname = member.fullname;
+      email = member.email;
+      img_url = member.img_url;
+      count_following = member.following_count;
+      count_followers = member.followers_count;
+    });
   }
 
   @override
   void initState() {
     super.initState();
-    var member = Member("Xurshidbek", "shamsun.com@gmail.com");
-    member.img_url =
-        "https://images.unsplash.com/photo-1712312938983-676e2cdbb9d6?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
-    fullname = member.fullname;
-    email = member.email;
-    img_url = member.img_url;
+
+    _apiLoadMember();
 
     var post = Post("NextGen Academy",
         "https://images.unsplash.com/photo-1712312938983-676e2cdbb9d6?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
@@ -119,7 +145,10 @@ class _ProfilePageState extends State<ProfilePage> {
           title: const Text(
             "Profile",
             style: TextStyle(
-                color: Colors.black, fontFamily: "Billabong", fontSize: 25),
+              color: Colors.black,
+              fontFamily: "Billabong",
+              fontSize: 25,
+            ),
           ),
           actions: [
             IconButton(
@@ -140,75 +169,74 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   //#myphoto
                   GestureDetector(
-                      onTap: () {
-                        _showPicker(context);
-                      },
-                      child: Stack(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(70),
-                              border: Border.all(
-                                width: 1.5,
-                                color: const Color.fromRGBO(193, 53, 132, 1),
-                              ),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(35),
-                              child: _image == null
-                                  ? const Image(
-                                      image: AssetImage(
-                                          "assets/images/person.jpg"),
-                                      width: 70,
-                                      height: 70,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Image.file(
-                                      _image!,
-                                      width: 70,
-                                      height: 70,
-                                      fit: BoxFit.cover,
-                                    ),
+                    onTap: () {
+                      _showPicker(context);
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(70),
+                            border: Border.all(
+                              width: 1.5,
+                              color: const Color.fromRGBO(193, 53, 132, 1),
                             ),
                           ),
-                          const SizedBox(
-                            width: 80,
-                            height: 80,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Icon(
-                                  Icons.add_circle,
-                                  color: Colors.purple,
-                                )
-                              ],
-                            ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(35),
+                            child: _image == null
+                                ? const Image(
+                                    image:
+                                        AssetImage("assets/images/person.jpg"),
+                                    width: 70,
+                                    height: 70,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    _image!,
+                                    width: 70,
+                                    height: 70,
+                                    fit: BoxFit.cover,
+                                  ),
                           ),
-                        ],
-                      )),
+                        ),
+                        const SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Icon(
+                                Icons.add_circle,
+                                color: Colors.purple,
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                   //#myinfos
-                  const SizedBox(
-                    height: 10,
-                  ),
+                  const SizedBox(height: 10),
                   Text(
                     fullname.toUpperCase(),
                     style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold),
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const SizedBox(
-                    height: 3,
-                  ),
+                  const SizedBox(height: 3),
                   Text(
                     email,
                     style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 14,
-                        fontWeight: FontWeight.normal),
+                      color: Colors.black54,
+                      fontSize: 14,
+                      fontWeight: FontWeight.normal,
+                    ),
                   ),
 
                   //#mycounts
@@ -224,19 +252,19 @@ class _ProfilePageState extends State<ProfilePage> {
                                 Text(
                                   count_posts.toString(),
                                   style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                const SizedBox(
-                                  height: 3,
-                                ),
+                                const SizedBox(height: 3),
                                 const Text(
                                   "POSTS",
                                   style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.normal),
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal,
+                                  ),
                                 ),
                               ],
                             ),
@@ -249,19 +277,19 @@ class _ProfilePageState extends State<ProfilePage> {
                                 Text(
                                   count_followers.toString(),
                                   style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                const SizedBox(
-                                  height: 3,
-                                ),
+                                const SizedBox(height: 3),
                                 const Text(
                                   "FOLLOWERS",
                                   style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.normal),
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal,
+                                  ),
                                 ),
                               ],
                             ),
@@ -274,19 +302,19 @@ class _ProfilePageState extends State<ProfilePage> {
                                 Text(
                                   count_following.toString(),
                                   style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                const SizedBox(
-                                  height: 3,
-                                ),
+                                const SizedBox(height: 3),
                                 const Text(
                                   "FOLLOWING",
                                   style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.normal),
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.normal,
+                                  ),
                                 ),
                               ],
                             ),
@@ -346,34 +374,33 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _itemOfPost(Post post) {
     return GestureDetector(
-        onLongPress: () {
-          _dialogRemovePost(post);
-        },
-        child: Container(
-          margin: const EdgeInsets.all(5),
-          child: Column(
-            children: [
-              Expanded(
-                child: CachedNetworkImage(
-                  width: double.infinity,
-                  imageUrl: post.img_post,
-                  placeholder: (context, url) => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  errorWidget: (context, url, error) => const Icon(Icons.error),
-                  fit: BoxFit.cover,
+      onLongPress: () {
+        _dialogRemovePost(post);
+      },
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        child: Column(
+          children: [
+            Expanded(
+              child: CachedNetworkImage(
+                width: double.infinity,
+                imageUrl: post.img_post,
+                placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator(),
                 ),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+                fit: BoxFit.cover,
               ),
-              const SizedBox(
-                height: 3,
-              ),
-              Text(
-                post.caption,
-                style: TextStyle(color: Colors.black87.withOpacity(0.7)),
-                maxLines: 2,
-              )
-            ],
-          ),
-        ));
+            ),
+            const SizedBox(height: 3),
+            Text(
+              post.caption,
+              style: TextStyle(color: Colors.black87.withOpacity(0.7)),
+              maxLines: 2,
+            )
+          ],
+        ),
+      ),
+    );
   }
 }

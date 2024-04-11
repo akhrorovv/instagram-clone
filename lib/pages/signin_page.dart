@@ -1,6 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram_clone/pages/home_page.dart';
 import 'package:instagram_clone/pages/signup_page.dart';
+
+import '../services/auth_service.dart';
+import '../services/pref_service.dart';
+import '../services/utils_service.dart';
 
 class SignInPage extends StatefulWidget {
   static const String id = "signin_page";
@@ -21,6 +26,27 @@ class _SignInPageState extends State<SignInPage> {
     String password = passwordController.text.toString().trim();
     if (email.isEmpty || password.isEmpty) return;
 
+    setState(() {
+      isLoading = true;
+    });
+    AuthService.signInUser(context, email, password).then((firebaseUser) => {
+      _getFirebaseUser(firebaseUser),
+    });
+  }
+
+  _getFirebaseUser(User? firebaseUser) async {
+    setState(() {
+      isLoading = false;
+    });
+    if (firebaseUser != null) {
+      await Prefs.saveUserId(firebaseUser.uid);
+      _callHomePage();
+    } else {
+      Utils.fireToast("Check your email or password");
+    }
+  }
+
+  _callHomePage() {
     Navigator.pushReplacementNamed(context, HomePage.id);
   }
 

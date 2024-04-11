@@ -1,6 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:instagram_clone/models/member_model.dart';
 import 'package:instagram_clone/pages/signin_page.dart';
+import '../services/auth_service.dart';
+import '../services/db_service.dart';
+import '../services/pref_service.dart';
 import '../services/utils_service.dart';
+import 'home_page.dart';
 
 class SignUpPage extends StatefulWidget {
   static const String id = "signup_page";
@@ -30,6 +36,39 @@ class _SignUpPageState extends State<SignUpPage> {
       Utils.fireToast("Password and confirm password does not match");
       return;
     }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    AuthService.signUpUser(context, fullName, email, password).then((firebaseUser) => {
+      _getFirebaseUser(firebaseUser, Member(fullName, email)),
+    });
+  }
+
+  _getFirebaseUser(User? firebaseUser, Member member) async {
+    setState(() {
+      isLoading = false;
+    });
+    if (firebaseUser != null) {
+      _saveMemberIdToLocal(firebaseUser);
+      _saveMemberToCloud(member);
+
+      _callHomePage();
+    } else {
+      Utils.fireToast("Check your information");
+    }
+  }
+
+  _saveMemberIdToLocal(User firebaseUser)async{
+    await Prefs.saveUserId(firebaseUser.uid);
+  }
+  _saveMemberToCloud(Member member) async{
+    await DBService.storeMember(member);
+  }
+
+  _callHomePage(){
+    Navigator.pushReplacementNamed(context, HomePage.id);
   }
 
   _callSignInPage() {
