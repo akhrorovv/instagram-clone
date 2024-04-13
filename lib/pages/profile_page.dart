@@ -8,6 +8,7 @@ import 'package:instagram_clone/services/auth_service.dart';
 import '../models/member_model.dart';
 import '../models/post_model.dart';
 import '../services/db_service.dart';
+import '../services/file_service.dart';
 import '../services/utils_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -33,7 +34,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       _image = File(image.path);
     });
-    //_apiChangePhoto();
+    _apiChangePhoto();
   }
 
   _imgFromCamera() async {
@@ -43,7 +44,24 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       _image = File(image.path);
     });
-    //_apiChangePhoto();
+    _apiChangePhoto();
+  }
+
+  _apiChangePhoto() {
+    if (_image == null) return;
+    setState(() {
+      isLoading = true;
+    });
+    FileService.uploadUserImage(_image!).then((downloadUrl) => {
+          _apiUpdateMember(downloadUrl),
+        });
+  }
+
+  _apiUpdateMember(String downloadUrl) async {
+    Member member = await DBService.loadMember();
+    member.img_url = downloadUrl;
+    await DBService.updateMember(member);
+    _apiLoadMember();
   }
 
   _showPicker(context) {
@@ -121,255 +139,266 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  _apiLoadPosts() {
+    DBService.loadPosts().then((value) => {
+      _resLoadPosts(value),
+    });
+  }
+
+  _resLoadPosts(List<Post> posts) {
+    setState(() {
+      items = posts;
+      count_posts = posts.length;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
-
     _apiLoadMember();
-
-    var post = Post("NextGen Academy",
-        "https://images.unsplash.com/photo-1712312938983-676e2cdbb9d6?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
-    items.add(post);
-    items.add(post);
-    items.add(post);
-    items.add(post);
+    _apiLoadPosts();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: const Text(
-            "Profile",
-            style: TextStyle(
-              color: Colors.black,
-              fontFamily: "Billabong",
-              fontSize: 25,
-            ),
+        elevation: 0,
+        title: const Text(
+          "Profile",
+          style: TextStyle(
+            color: Colors.black,
+            fontFamily: "Billabong",
+            fontSize: 25,
           ),
-          actions: [
-            IconButton(
-              onPressed: () {
-                _dialogLogout();
-              },
-              icon: const Icon(Icons.exit_to_app),
-              color: const Color.fromRGBO(193, 53, 132, 1),
-            )
-          ],
         ),
-        body: Stack(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  //#myphoto
-                  GestureDetector(
-                    onTap: () {
-                      _showPicker(context);
-                    },
-                    child: Stack(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(70),
-                            border: Border.all(
-                              width: 1.5,
-                              color: const Color.fromRGBO(193, 53, 132, 1),
-                            ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(35),
-                            child: _image == null
-                                ? const Image(
-                                    image:
-                                        AssetImage("assets/images/person.jpg"),
-                                    width: 70,
-                                    height: 70,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Image.file(
-                                    _image!,
-                                    width: 70,
-                                    height: 70,
-                                    fit: BoxFit.cover,
-                                  ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              _dialogLogout();
+            },
+            icon: const Icon(Icons.exit_to_app),
+            color: const Color.fromRGBO(193, 53, 132, 1),
+          )
+        ],
+      ),
+      body: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              children: [
+                //#myphoto
+                GestureDetector(
+                  onTap: () {
+                    _showPicker(context);
+                  },
+                  child: Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(70),
+                          border: Border.all(
+                            width: 1.5,
+                            color: const Color.fromRGBO(193, 53, 132, 1),
                           ),
                         ),
-                        const SizedBox(
-                          width: 80,
-                          height: 80,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Icon(
-                                Icons.add_circle,
-                                color: Colors.purple,
-                              )
-                            ],
-                          ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(35),
+                          child: img_url.isEmpty
+                              ? const Image(
+                                  image: AssetImage("assets/images/person.jpg"),
+                                  width: 70,
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.network(
+                                  img_url,
+                                  width: 70,
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Icon(
+                              Icons.add_circle,
+                              color: Colors.purple,
+                            )
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
+                ),
 
-                  //#myinfos
-                  const SizedBox(height: 10),
-                  Text(
-                    fullname.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                //#myinfos
+                const SizedBox(height: 10),
+                Text(
+                  fullname.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    email,
-                    style: const TextStyle(
-                      color: Colors.black54,
-                      fontSize: 14,
-                      fontWeight: FontWeight.normal,
-                    ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  email,
+                  style: const TextStyle(
+                    color: Colors.black54,
+                    fontSize: 14,
+                    fontWeight: FontWeight.normal,
                   ),
+                ),
 
-                  //#mycounts
-                  Container(
-                    margin: const EdgeInsets.only(top: 10),
-                    height: 80,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Text(
-                                  count_posts.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                const Text(
-                                  "POSTS",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Text(
-                                  count_followers.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                const Text(
-                                  "FOLLOWERS",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Text(
-                                  count_following.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                const Text(
-                                  "FOLLOWING",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  //list or grid
-                  Row(
+                //#mycounts
+                Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  height: 80,
+                  child: Row(
                     children: [
                       Expanded(
                         child: Center(
-                          child: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                axisCount = 1;
-                              });
-                            },
-                            icon: Icon(Icons.list_alt),
+                          child: Column(
+                            children: [
+                              Text(
+                                count_posts.toString(),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              const Text(
+                                "POSTS",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                       Expanded(
                         child: Center(
-                          child: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                axisCount = 2;
-                              });
-                            },
-                            icon: const Icon(Icons.grid_view),
+                          child: Column(
+                            children: [
+                              Text(
+                                count_followers.toString(),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              const Text(
+                                "FOLLOWERS",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Text(
+                                count_following.toString(),
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              const Text(
+                                "FOLLOWING",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
+                ),
 
-                  //#myposts
-                  Expanded(
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: axisCount),
-                      itemCount: items.length,
-                      itemBuilder: (ctx, index) {
-                        return _itemOfPost(items[index]);
-                      },
+                //list or grid
+                Row(
+                  children: [
+                    Expanded(
+                      child: Center(
+                        child: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              axisCount = 1;
+                            });
+                          },
+                          icon: Icon(Icons.list_alt),
+                        ),
+                      ),
                     ),
+                    Expanded(
+                      child: Center(
+                        child: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              axisCount = 2;
+                            });
+                          },
+                          icon: const Icon(Icons.grid_view),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                //#myposts
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: axisCount),
+                    itemCount: items.length,
+                    itemBuilder: (ctx, index) {
+                      return _itemOfPost(items[index]);
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ));
+          ),
+          isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(),
+                )
+              : const SizedBox.shrink(),
+        ],
+      ),
+    );
   }
 
   Widget _itemOfPost(Post post) {

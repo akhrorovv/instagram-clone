@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
+import '../services/db_service.dart';
 
 class FeedPage extends StatefulWidget {
   final PageController? pageController;
@@ -38,21 +39,26 @@ class _FeedPageState extends State<FeedPage> {
       post.liked = false;
     });
   }
+  _apiLoadFeeds() {
+    setState(() {
+      isLoading = true;
+    });
+    DBService.loadFeeds().then((value) => {
+      _resLoadFeeds(value),
+    });
+  }
+
+  _resLoadFeeds(List<Post> posts) {
+    setState(() {
+      items = posts;
+      isLoading = false;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    var post = Post("NextGen Academy",
-        "https://images.unsplash.com/photo-1712312938983-676e2cdbb9d6?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
-    post.fullname = "Xurshidbek Kurbanov";
-    post.caption = "Lets try this kind of photo in Seoul!";
-    post.date = "2024-04-08";
-    post.mine = true;
-
-    items.add(post);
-    items.add(post);
-    items.add(post);
-    items.add(post);
+    _apiLoadFeeds();
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/member_model.dart';
+import '../services/db_service.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -17,34 +18,46 @@ class _SearchPageState extends State<SearchPage> {
     setState(() {
       isLoading = true;
     });
-    //await DBService.followMember(someone);
+    await DBService.followMember(someone);
     setState(() {
       someone.followed = true;
       isLoading = false;
     });
-    //DBService.storePostsToMyFeed(someone);
+    DBService.storePostsToMyFeed(someone);
   }
 
   void _apiUnFollowMember(Member someone) async {
     setState(() {
       isLoading = true;
     });
-    //await DBService.unfollowMember(someone);
+    await DBService.unfollowMember(someone);
     setState(() {
       someone.followed = false;
       isLoading = false;
     });
-    //DBService.removePostsFromMyFeed(someone);
+    DBService.removePostsFromMyFeed(someone);
+  }
+
+  void _apiSearchMembers(String keyword) {
+    setState(() {
+      isLoading = true;
+    });
+    DBService.searchMembers(keyword).then((users) => {
+          _resSearchMembers(users),
+        });
+  }
+
+  _resSearchMembers(List<Member> members) {
+    setState(() {
+      items = members;
+      isLoading = false;
+    });
   }
 
   @override
   void initState() {
     super.initState();
-    var member = Member("Xurshidbek", "shamsun.com@gmail.com");
-    items.add(member);
-    items.add(member);
-    items.add(member);
-    items.add(member);
+    _apiSearchMembers('');
   }
 
   @override
@@ -175,8 +188,9 @@ class _SearchPageState extends State<SearchPage> {
                     width: 100,
                     height: 30,
                     decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(3),
-                        border: Border.all(width: 1, color: Colors.grey)),
+                      borderRadius: BorderRadius.circular(3),
+                      border: Border.all(width: 1, color: Colors.grey),
+                    ),
                     child: Center(
                       child: member.followed
                           ? const Text("Following")

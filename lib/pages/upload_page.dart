@@ -2,10 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models/post_model.dart';
+import '../services/db_service.dart';
+import '../services/file_service.dart';
+
 class UploadPage extends StatefulWidget {
   final PageController? pageController;
 
-  const UploadPage({Key? key, this.pageController}) : super(key: key);
+  const UploadPage({super.key, this.pageController});
 
   @override
   State<UploadPage> createState() => _UploadPageState();
@@ -23,13 +27,13 @@ class _UploadPageState extends State<UploadPage> {
     });
     captionController.text = "";
     _image = null;
-    widget.pageController!.animateToPage(
-        0, duration: const Duration(microseconds: 200), curve: Curves.easeIn);
+    widget.pageController!.animateToPage(0,
+        duration: const Duration(microseconds: 200), curve: Curves.easeIn);
   }
 
   _imgFromGallery() async {
     XFile? image =
-    await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     setState(() {
       _image = File(image!.path);
     });
@@ -37,7 +41,7 @@ class _UploadPageState extends State<UploadPage> {
 
   _imgFromCamera() async {
     XFile? image =
-    await _picker.pickImage(source: ImageSource.camera, imageQuality: 50);
+        await _picker.pickImage(source: ImageSource.camera, imageQuality: 50);
     setState(() {
       _image = File(image!.path);
     });
@@ -45,30 +49,62 @@ class _UploadPageState extends State<UploadPage> {
 
   void _showPicker(context) {
     showModalBottomSheet(
-        context: context,
-        builder: (BuildContext context) {
-          return SafeArea(
-            child: Wrap(
-              children: [
-                ListTile(
-                    leading: const Icon(Icons.photo_library),
-                    title: const Text('Pick Photo'),
-                    onTap: () {
-                      _imgFromGallery();
-                      Navigator.of(context).pop();
-                    }),
-                ListTile(
-                  leading: const Icon(Icons.photo_camera),
-                  title: const Text('Take Photo'),
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Pick Photo'),
                   onTap: () {
-                    _imgFromCamera();
+                    _imgFromGallery();
                     Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            ),
-          );
-        });
+                  }),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  _imgFromCamera();
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  _uploadNewPost() {
+    String caption = captionController.text.toString().trim();
+    if (caption.isEmpty) return;
+    if (_image == null) return;
+    _apiPostImage();
+  }
+
+  void _apiPostImage(){
+    setState(() {
+      isLoading = true;
+    });
+    FileService.uploadPostImage(_image!).then((downloadUrl) => {
+      _resPostImage(downloadUrl),
+    });
+  }
+
+  void _resPostImage(String downloadUrl){
+    String caption = captionController.text.toString().trim();
+    Post post = Post(caption, downloadUrl);
+    _apiStorePost(post);
+  }
+
+  void _apiStorePost(Post post)async{
+    // Post to posts
+    Post posted = await DBService.storePost(post);
+    // Post to feeds
+    DBService.storeFeed(posted).then((value) => {
+      _moveToFeed(),
+    });
   }
 
   @override
@@ -85,7 +121,7 @@ class _UploadPageState extends State<UploadPage> {
           actions: [
             IconButton(
               onPressed: () {
-                _moveToFeed();
+                _uploadNewPost();
               },
               icon: const Icon(
                 Icons.drive_folder_upload,
@@ -107,53 +143,52 @@ class _UploadPageState extends State<UploadPage> {
                       },
                       child: Container(
                         width: double.infinity,
-                        height: MediaQuery
-                            .of(context)
-                            .size
-                            .width,
+                        height: MediaQuery.of(context).size.width,
                         color: Colors.grey.withOpacity(0.4),
                         child: _image == null
                             ? const Center(
-                          child: Icon(
-                            Icons.add_a_photo,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
-                        )
+                                child: Icon(
+                                  Icons.add_a_photo,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                              )
                             : Stack(
-                          children: [
-                            Image.file(
-                              _image!,
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                            Container(
-                              width: double.infinity,
-                              color: Colors.black12,
-                              padding: EdgeInsets.all(10),
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.end,
                                 children: [
-                                  IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _image = null;
-                                      });
-                                    },
-                                    icon: const Icon(Icons.highlight_remove),
-                                    color: Colors.white,
+                                  Image.file(
+                                    _image!,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  Container(
+                                    width: double.infinity,
+                                    color: Colors.black12,
+                                    padding: EdgeInsets.all(10),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _image = null;
+                                            });
+                                          },
+                                          icon: const Icon(
+                                              Icons.highlight_remove),
+                                          color: Colors.white,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                     Container(
-                      margin: const EdgeInsets.only(left: 10, right: 10, top: 10),
+                      margin:
+                          const EdgeInsets.only(left: 10, right: 10, top: 10),
                       child: TextField(
                         controller: captionController,
                         style: const TextStyle(color: Colors.black),
@@ -163,7 +198,7 @@ class _UploadPageState extends State<UploadPage> {
                         decoration: const InputDecoration(
                             hintText: "Caption",
                             hintStyle:
-                            TextStyle(fontSize: 17, color: Colors.black38)),
+                                TextStyle(fontSize: 17, color: Colors.black38)),
                       ),
                     ),
                   ],
@@ -172,8 +207,8 @@ class _UploadPageState extends State<UploadPage> {
             ),
             isLoading
                 ? const Center(
-              child: CircularProgressIndicator(),
-            )
+                    child: CircularProgressIndicator(),
+                  )
                 : const SizedBox.shrink(),
           ],
         ));
