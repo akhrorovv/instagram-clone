@@ -63,62 +63,64 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: const Text(
-            "Search",
-            style: TextStyle(
-              color: Colors.black,
-              fontFamily: "Billabong",
-              fontSize: 25,
-            ),
+        elevation: 0,
+        title: const Text(
+          "Search",
+          style: TextStyle(
+            color: Colors.black,
+            fontFamily: "Billabong",
+            fontSize: 25,
           ),
         ),
-        body: Stack(
-          children: [
-            Container(
-              padding: const EdgeInsets.only(left: 20, right: 20),
-              child: Column(
-                children: [
-                  //#search member
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.only(left: 10, right: 10),
-                    height: 45,
-                    decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(7)),
-                    child: TextField(
-                      style: const TextStyle(color: Colors.black87),
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                          hintText: "Search",
-                          border: InputBorder.none,
-                          hintStyle:
-                              TextStyle(fontSize: 15, color: Colors.grey),
-                          icon: Icon(
-                            Icons.search,
-                            color: Colors.grey,
-                          )),
+      ),
+      body: Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.only(left: 20, right: 20),
+            child: Column(
+              children: [
+                //#search member
+                Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.only(left: 10, right: 10),
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: TextField(
+                    style: const TextStyle(color: Colors.black87),
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                      hintText: "Search",
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
+                      icon: Icon(
+                        Icons.search,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
+                ),
 
-                  //#member list
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (ctx, index) {
-                        return _itemOfMember(items[index]);
-                      },
-                    ),
+                //#member list
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: items.length,
+                    itemBuilder: (ctx, index) {
+                      return _itemOfMember(items[index]);
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ));
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _itemOfMember(Member member) {
@@ -152,9 +154,7 @@ class _SearchPageState extends State<SearchPage> {
                     ),
             ),
           ),
-          const SizedBox(
-            width: 15,
-          ),
+          const SizedBox(width: 15),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,9 +163,7 @@ class _SearchPageState extends State<SearchPage> {
                 member.fullname,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(
-                height: 3,
-              ),
+              const SizedBox(height: 3),
               Text(
                 member.email,
                 style: const TextStyle(color: Colors.black54),

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:instagram_clone/pages/signin_page.dart';
-
 import '../services/auth_service.dart';
 import 'home_page.dart';
 
@@ -15,10 +14,10 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
-  _callNextPage(){
-    if(AuthService.isLoggedIn()){
+  _callNextPage() {
+    if (AuthService.isLoggedIn()) {
       Navigator.pushReplacementNamed(context, HomePage.id);
-    }else{
+    } else {
       Navigator.pushReplacementNamed(context, SignInPage.id);
     }
   }

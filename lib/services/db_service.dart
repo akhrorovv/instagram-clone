@@ -232,4 +232,44 @@ class DBService {
         .doc(post.id)
         .delete();
   }
+
+  static Future likePost(Post post, bool liked) async {
+    String uid = AuthService.currentUserId();
+    post.liked = liked;
+
+    await _firestore
+        .collection(folder_users)
+        .doc(uid)
+        .collection(folder_feeds)
+        .doc(post.id)
+        .set(post.toJson());
+
+    if (uid == post.uid) {
+      await _firestore
+          .collection(folder_users)
+          .doc(uid)
+          .collection(folder_posts)
+          .doc(post.id)
+          .set(post.toJson());
+    }
+  }
+
+  static Future<List<Post>> loadLikes() async {
+    String uid = AuthService.currentUserId();
+    List<Post> posts = [];
+
+    var querySnapshot = await _firestore
+        .collection(folder_users)
+        .doc(uid)
+        .collection(folder_feeds)
+        .where("liked", isEqualTo: true)
+        .get();
+
+    for (var result in querySnapshot.docs) {
+      Post post = Post.fromJson(result.data());
+      if (post.uid == uid) post.mine = true;
+      posts.add(post);
+    }
+    return posts;
+  }
 }

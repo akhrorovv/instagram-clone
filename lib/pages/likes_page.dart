@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
+import '../services/db_service.dart';
 
 class LikesPage extends StatefulWidget {
   const LikesPage({super.key});
@@ -13,33 +14,35 @@ class _LikesPageState extends State<LikesPage> {
   bool isLoading = false;
   List<Post> items = [];
 
+  void _apiLoadLikes() {
+    setState(() {
+      isLoading = true;
+    });
+    DBService.loadLikes().then((value) => {
+      _resLoadPost(value),
+    });
+  }
+
+  void _resLoadPost(List<Post> posts) {
+    setState(() {
+      items = posts;
+      isLoading = false;
+    });
+  }
+
   void _apiPostUnLike(Post post) async {
     setState(() {
       isLoading = true;
     });
 
-    //await DBService.likePost(post, false);
-    setState(() {
-      isLoading = false;
-      post.liked = false;
-    });
+    await DBService.likePost(post, false);
+    _apiLoadLikes();
   }
 
   @override
   void initState() {
     super.initState();
-    var post = Post("NextGen Academy",
-        "https://images.unsplash.com/photo-1712312938983-676e2cdbb9d6?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
-    post.fullname = "Xurshidbek Kurbanov";
-    post.caption = "Lets try this kind of photo in Seoul!";
-    post.date = "2024-04-08";
-    post.mine = true;
-    post.liked = true;
-
-    items.add(post);
-    items.add(post);
-    items.add(post);
-    items.add(post);
+    _apiLoadLikes();
   }
 
   @override
@@ -81,7 +84,7 @@ class _LikesPageState extends State<LikesPage> {
           const Divider(),
           //#user info
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
