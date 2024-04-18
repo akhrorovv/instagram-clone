@@ -4,6 +4,7 @@ import 'package:instagram_clone/services/utils_service.dart';
 import '../models/member_model.dart';
 import '../models/post_model.dart';
 import 'auth_service.dart';
+import 'log_service.dart';
 
 class DBService {
   static final _firestore = FirebaseFirestore.instance;
@@ -17,6 +18,13 @@ class DBService {
   /// Member Related
   static Future storeMember(Member member) async {
     member.uid = AuthService.currentUserId();
+
+    Map<String, String> params = await Utils.deviceParams();
+    LogService.i(params.toString());
+
+    member.device_id = params["device_id"]!;
+    member.device_type = params["device_type"]!;
+    member.device_token = params["device_token"]!;
 
     return _firestore
         .collection(folder_users)

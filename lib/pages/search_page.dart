@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:instagram_clone/services/http_service.dart';
 import '../models/member_model.dart';
 import '../services/db_service.dart';
 
@@ -24,6 +26,13 @@ class _SearchPageState extends State<SearchPage> {
       isLoading = false;
     });
     DBService.storePostsToMyFeed(someone);
+    sendNotificationToFollowedMember(someone);
+  }
+
+  void sendNotificationToFollowedMember(Member someone) async {
+    Member me = await DBService.loadMember();
+    await Network.POST(
+        Network.API_SEND_NOTIF, Network.paramsNotify(me, someone));
   }
 
   void _apiUnFollowMember(Member someone) async {
@@ -42,9 +51,10 @@ class _SearchPageState extends State<SearchPage> {
     setState(() {
       isLoading = true;
     });
-    DBService.searchMembers(keyword).then((users) => {
-          _resSearchMembers(users),
-        });
+    DBService.searchMembers(keyword).then((users) =>
+    {
+      _resSearchMembers(users),
+    });
   }
 
   _resSearchMembers(List<Member> members) {
@@ -141,63 +151,65 @@ class _SearchPageState extends State<SearchPage> {
               borderRadius: BorderRadius.circular(22.5),
               child: member.img_url.isEmpty
                   ? const Image(
-                      image: AssetImage("assets/images/person.jpg"),
-                      width: 45,
-                      height: 45,
-                      fit: BoxFit.cover,
-                    )
+                image: AssetImage("assets/images/person.jpg"),
+                width: 45,
+                height: 45,
+                fit: BoxFit.cover,
+              )
                   : Image.network(
-                      member.img_url,
-                      width: 45,
-                      height: 45,
-                      fit: BoxFit.cover,
-                    ),
+                member.img_url,
+                width: 45,
+                height: 45,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           const SizedBox(width: 15),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                member.fullname,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                member.email,
-                style: const TextStyle(color: Colors.black54),
-              ),
-            ],
-          ),
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    if (member.followed) {
-                      _apiUnFollowMember(member);
-                    } else {
-                      _apiFollowMember(member);
-                    }
-                  },
-                  child: Container(
-                    width: 100,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      border: Border.all(width: 1, color: Colors.grey),
-                    ),
-                    child: Center(
-                      child: member.followed
-                          ? const Text("Following")
-                          : const Text("Follow"),
-                    ),
-                  ),
+                Text(
+                  member.fullname,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  overflow: TextOverflow.ellipsis,
+                  member.email,
+                  style: const TextStyle(color: Colors.black54, fontSize: 14),
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: 7),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  if (member.followed) {
+                    _apiUnFollowMember(member);
+                  } else {
+                    _apiFollowMember(member);
+                  }
+                },
+                child: Container(
+                  width: 100,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(3),
+                    border: Border.all(width: 1, color: Colors.grey),
+                  ),
+                  child: Center(
+                    child: member.followed
+                        ? const Text("Following")
+                        : const Text("Follow"),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
