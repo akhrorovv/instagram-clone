@@ -61,13 +61,22 @@ class DBService {
 
   static Future<List<Member>> searchMembers(String keyword) async {
     List<Member> members = [];
+    List<Member> resMembers = [];
+    List<Member> followingsList = [];
     String uid = AuthService.currentUserId();
 
     var querySnapshot = await _firestore
         .collection(folder_users)
         .orderBy("email")
         .startAt([keyword]).get();
-    print(querySnapshot.docs.length);
+
+    var querySnapshot1 = await _firestore
+        .collection(folder_users)
+        .doc(uid)
+        .collection(folder_following)
+        .get();
+
+    print('Following Members: ${followingsList.length}');
 
     for (var result in querySnapshot.docs) {
       Member newMember = Member.fromJson(result.data());
@@ -75,7 +84,28 @@ class DBService {
         members.add(newMember);
       }
     }
-    return members;
+
+    for (var result in querySnapshot1.docs) {
+      Member newMember = Member.fromJson(result.data());
+      followingsList.add(newMember);
+    }
+
+    print('followingsList : ${followingsList.length}');
+
+    for (var member in members) {
+      if (followingsList.any((obj) => obj.uid == member.uid)) {
+        member.followed = true;
+        resMembers.add(member);
+      } else {
+        resMembers.add(member);
+      }
+    }
+
+    print('resMembers length: ${resMembers.length}');
+
+    print('members length: ${members.length}');
+
+    return resMembers;
   }
 
   static Future<Member> followMember(Member someone) async {
@@ -279,5 +309,16 @@ class DBService {
       posts.add(post);
     }
     return posts;
+  }
+
+  static Future removePost(Post post) async {
+    String uid = AuthService.currentUserId();
+    await removeFeed(post);
+    return await _firestore
+        .collection(folder_users)
+        .doc(uid)
+        .collection(folder_posts)
+        .doc(post.id)
+        .delete();
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:instagram_clone/pages/signin_page.dart';
 import 'package:instagram_clone/services/auth_service.dart';
@@ -94,11 +95,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   _dialogRemovePost(Post post) async {
-    var result = await Utils.dialogCommon(
-        context, "Instagram", "Do you want to detele this post?", false);
-    if (result != null && result) {
+    var result = await Utils.dialogCommon(context, "Instagram", "Do you want to detele this post?", false);
+
+    if (result) {
       setState(() {
         isLoading = true;
+      });
+      DBService.removePost(post).then((value) => {
+        _apiLoadPosts(),
       });
     }
   }
@@ -147,6 +151,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   _resLoadPosts(List<Post> posts) {
     setState(() {
+      isLoading =  false;
       items = posts;
       count_posts = posts.length;
     });
@@ -179,7 +184,7 @@ class _ProfilePageState extends State<ProfilePage> {
             onPressed: () {
               _dialogLogout();
             },
-            icon: const Icon(Icons.exit_to_app),
+            icon: const Icon(Iconsax.logout),
             color: const Color.fromRGBO(193, 53, 132, 1),
           )
         ],
@@ -358,7 +363,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               axisCount = 1;
                             });
                           },
-                          icon: Icon(Icons.list_alt),
+                          icon: const Icon(Iconsax.row_vertical),
                         ),
                       ),
                     ),
@@ -370,7 +375,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               axisCount = 2;
                             });
                           },
-                          icon: const Icon(Icons.grid_view),
+                          icon: const Icon(Iconsax.category),
                         ),
                       ),
                     ),

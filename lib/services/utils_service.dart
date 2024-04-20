@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:instagram_clone/services/pref_service.dart';
 import 'package:platform_device_id_v3/platform_device_id.dart';
 
@@ -17,28 +19,38 @@ class Utils {
     );
   }
 
-  static Future<bool> dialogCommon(BuildContext context, String title,
-      String message, bool isSingle) async {
+  static Future<bool> dialogCommon(
+      BuildContext context, String title, String message, bool isSingle) async {
     return await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
+        return CupertinoAlertDialog(
+          title: Text(title,
+            style: GoogleFonts.montserrat(textStyle: const TextStyle(color: Colors.black)),
+          ),
+          content: Text(message,
+            style: GoogleFonts.montserrat(textStyle: const TextStyle(color: Colors.black)),
+          ),
           actions: [
             !isSingle
-                ? MaterialButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: const Text("Cancel"),
-            )
+                ? CupertinoDialogAction(
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.montserrat(textStyle: const TextStyle(color: Colors.blue)),
+                    ),
+                  )
                 : const SizedBox.shrink(),
-            MaterialButton(
+            CupertinoDialogAction(
               onPressed: () {
                 Navigator.of(context).pop(true);
               },
-              child: const Text("Confirm"),
+              child: Text(
+                "Delete",
+                style: GoogleFonts.montserrat(textStyle: const TextStyle(color: Colors.red)),
+              ),
             ),
           ],
         );
@@ -50,9 +62,7 @@ class Utils {
     DateTime now = DateTime.now();
 
     String convertedDateTime =
-        "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now
-        .day.toString().padLeft(2, '0')} ${now.hour.toString()}:${now.minute
-        .toString()}";
+        "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString()}:${now.minute.toString()}";
     return convertedDateTime;
   }
 
