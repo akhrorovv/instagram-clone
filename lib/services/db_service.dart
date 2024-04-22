@@ -108,6 +108,13 @@ class DBService {
     return resMembers;
   }
 
+  static Future<Member> getOwner(String uid) async {
+    var user = await _firestore.collection(folder_users).doc(uid).get();
+    var receiver = Member.fromJson(user.data()!);
+    LogService.i(receiver.fullname);
+    return receiver;
+  }
+
   static Future<Member> followMember(Member someone) async {
     Member me = await loadMember();
 
@@ -199,9 +206,9 @@ class DBService {
         .collection(folder_posts)
         .get();
 
-    querySnapshot.docs.forEach((result) {
+    for (var result in querySnapshot.docs) {
       posts.add(Post.fromJson(result.data()));
-    });
+    }
     return posts;
   }
 

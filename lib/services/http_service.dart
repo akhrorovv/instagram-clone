@@ -37,4 +37,13 @@ class Network {
     LogService.i(notificationModel.toJson().toString());
     return notificationModel.toJson();
   }
+
+  static Map<String, dynamic> paramsLikesNotify(Member sender, Member receiver) {
+    var notification = Notification(title: "Liked", body: "${sender.fullname} has just been liked your post");
+    var registrationIds = [receiver.device_token];
+    var notificationModel = NotificationModel(notification: notification, registrationIds: registrationIds);
+
+    LogService.i(notificationModel.toJson().toString());
+    return notificationModel.toJson();
+  }
 }

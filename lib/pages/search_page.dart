@@ -70,6 +70,10 @@ class _SearchPageState extends State<SearchPage> {
     _apiSearchMembers('');
   }
 
+  Future<void> _handleRefresh() async {
+    _apiSearchMembers('');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,49 +90,52 @@ class _SearchPageState extends State<SearchPage> {
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          Container(
-            padding: const EdgeInsets.only(left: 20, right: 20),
-            child: Column(
-              children: [
-                //#search member
-                Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.only(left: 10, right: 10),
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: TextField(
-                    style: const TextStyle(color: Colors.black87),
-                    controller: searchController,
-                    decoration: const InputDecoration(
-                      hintText: "Search",
-                      border: InputBorder.none,
-                      hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
-                      icon: Icon(
-                        Icons.search,
-                        color: Colors.grey,
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.only(left: 20, right: 20),
+              child: Column(
+                children: [
+                  //#search member
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.only(left: 10, right: 10),
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: TextField(
+                      style: const TextStyle(color: Colors.black87),
+                      controller: searchController,
+                      decoration: const InputDecoration(
+                        hintText: "Search",
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
+                        icon: Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                //#member list
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (ctx, index) {
-                      return _itemOfMember(items[index]);
-                    },
+                  //#member list
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: items.length,
+                      itemBuilder: (ctx, index) {
+                        return _itemOfMember(items[index]);
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -195,17 +202,26 @@ class _SearchPageState extends State<SearchPage> {
                     _apiFollowMember(member);
                   }
                 },
-                child: Container(
+                child: member.followed ? Container(
                   width: 100,
                   height: 30,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(3),
-                    border: Border.all(width: 1, color: Colors.grey),
+                    border: Border.all(width: 1, color: Colors.black),
                   ),
-                  child: Center(
-                    child: member.followed
-                        ? const Text("Following")
-                        : const Text("Follow"),
+                  child: const Center(
+                    child: Text("Following")
+                  ),
+                ) : Container(
+                  width: 100,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(5),
+                    // border: Border.all(width: 1, color: Colors.grey),
+                  ),
+                  child: const Center(
+                    child:Text("Follow", style: TextStyle(color: Colors.white),),
                   ),
                 ),
               ),

@@ -125,9 +125,7 @@ class _LikesPageState extends State<LikesPage> {
                                 fit: BoxFit.cover,
                               ),
                       ),
-                      const SizedBox(
-                        width: 10,
-                      ),
+                      const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -137,9 +135,7 @@ class _LikesPageState extends State<LikesPage> {
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black),
                           ),
-                          const SizedBox(
-                            height: 3,
-                          ),
+                          const SizedBox(height: 3),
                           Text(
                             post.date,
                             style:
@@ -213,7 +209,8 @@ class _LikesPageState extends State<LikesPage> {
                 overflow: TextOverflow.visible,
                 text: TextSpan(
                   text: post.caption,
-                  style: GoogleFonts.montserrat(textStyle: const TextStyle(color: Colors.black)),
+                  style: GoogleFonts.montserrat(
+                      textStyle: const TextStyle(color: Colors.black)),
                 ),
               ),
             ),

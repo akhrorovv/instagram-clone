@@ -48,7 +48,7 @@ class Utils {
                 Navigator.of(context).pop(true);
               },
               child: Text(
-                "Delete",
+                "Confirm",
                 style: GoogleFonts.montserrat(textStyle: const TextStyle(color: Colors.red)),
               ),
             ),

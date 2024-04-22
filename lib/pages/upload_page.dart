@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:instagram_clone/services/utils_service.dart';
 
 import '../models/post_model.dart';
 import '../services/db_service.dart';
@@ -55,14 +57,14 @@ class _UploadPageState extends State<UploadPage> {
           child: Wrap(
             children: [
               ListTile(
-                  leading: const Icon(Icons.photo_library),
+                  leading: const Icon(Iconsax.gallery5),
                   title: const Text('Pick Photo'),
                   onTap: () {
                     _imgFromGallery();
                     Navigator.of(context).pop();
                   }),
               ListTile(
-                leading: const Icon(Icons.photo_camera),
+                leading: const Icon(Iconsax.camera),
                 title: const Text('Take Photo'),
                 onTap: () {
                   _imgFromCamera();
@@ -78,33 +80,43 @@ class _UploadPageState extends State<UploadPage> {
 
   _uploadNewPost() {
     String caption = captionController.text.toString().trim();
-    if (caption.isEmpty) return;
-    if (_image == null) return;
+    if (caption.isEmpty && _image == null) {
+      Utils.fireToast('Please select image and write caption');
+      return;
+    }
+    if (caption.isEmpty) {
+      Utils.fireToast('Please enter caption');
+      return;
+    }
+    if (_image == null) {
+      Utils.fireToast('Please select image');
+      return;
+    }
     _apiPostImage();
   }
 
-  void _apiPostImage(){
+  void _apiPostImage() {
     setState(() {
       isLoading = true;
     });
     FileService.uploadPostImage(_image!).then((downloadUrl) => {
-      _resPostImage(downloadUrl),
-    });
+          _resPostImage(downloadUrl),
+        });
   }
 
-  void _resPostImage(String downloadUrl){
+  void _resPostImage(String downloadUrl) {
     String caption = captionController.text.toString().trim();
     Post post = Post(caption, downloadUrl);
     _apiStorePost(post);
   }
 
-  void _apiStorePost(Post post)async{
+  void _apiStorePost(Post post) async {
     // Post to posts
     Post posted = await DBService.storePost(post);
     // Post to feeds
     DBService.storeFeed(posted).then((value) => {
-      _moveToFeed(),
-    });
+          _moveToFeed(),
+        });
   }
 
   @override
@@ -124,7 +136,7 @@ class _UploadPageState extends State<UploadPage> {
                 _uploadNewPost();
               },
               icon: const Icon(
-                Icons.drive_folder_upload,
+                Iconsax.gallery_export,
                 color: Color.fromRGBO(193, 53, 132, 1),
               ),
             ),
@@ -148,8 +160,8 @@ class _UploadPageState extends State<UploadPage> {
                         child: _image == null
                             ? const Center(
                                 child: Icon(
-                                  Icons.add_a_photo,
-                                  size: 50,
+                                  Iconsax.gallery_add,
+                                  size: 60,
                                   color: Colors.grey,
                                 ),
                               )

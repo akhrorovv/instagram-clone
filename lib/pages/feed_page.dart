@@ -1,9 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:lottie/lottie.dart';
+import 'package:share_plus/share_plus.dart';
+import '../models/member_model.dart';
 import '../models/post_model.dart';
 import '../services/db_service.dart';
+import '../services/http_service.dart';
 import '../services/utils_service.dart';
 
 class FeedPage extends StatefulWidget {
@@ -29,6 +36,14 @@ class _FeedPageState extends State<FeedPage> {
       isLoading = false;
       post.liked = true;
     });
+    var owner = await DBService.getOwner(post.uid);
+    sendNotificationToLikedMember(owner);
+  }
+
+  void sendNotificationToLikedMember(Member someone) async {
+    Member me = await DBService.loadMember();
+    await Network.POST(
+        Network.API_SEND_NOTIF, Network.paramsLikesNotify(me, someone));
   }
 
   void _apiPostUnLike(Post post) async {
@@ -47,9 +62,7 @@ class _FeedPageState extends State<FeedPage> {
     setState(() {
       isLoading = true;
     });
-    DBService.loadFeeds().then((value) => {
-          _resLoadFeeds(value),
-        });
+    DBService.loadFeeds().then((value) => {_resLoadFeeds(value)});
   }
 
   _resLoadFeeds(List<Post> posts) {
@@ -78,6 +91,16 @@ class _FeedPageState extends State<FeedPage> {
     super.initState();
     _apiLoadFeeds();
   }
+
+  Future<void> _handleRefresh() async {
+    _apiLoadFeeds();
+  }
+
+
+  // share(Post post) async {
+  //   await Share.share(post.img_post);
+  //   print(post.img_post);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -108,20 +131,23 @@ class _FeedPageState extends State<FeedPage> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          ListView.builder(
-            itemCount: items.length,
-            itemBuilder: (ctx, index) {
-              return _itemOfPost(items[index]);
-            },
-          ),
-          isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(),
-                )
-              : const SizedBox.shrink(),
-        ],
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: Stack(
+          children: [
+            ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (ctx, index) {
+                return _itemOfPost(items[index]);
+              },
+            ),
+            isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : const SizedBox.shrink(),
+          ],
+        ),
       ),
     );
   }
@@ -164,9 +190,7 @@ class _FeedPageState extends State<FeedPage> {
                                 fit: BoxFit.cover,
                               ),
                       ),
-                      const SizedBox(
-                        width: 10,
-                      ),
+                      const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -177,9 +201,7 @@ class _FeedPageState extends State<FeedPage> {
                               color: Colors.black,
                             ),
                           ),
-                          const SizedBox(
-                            height: 3,
-                          ),
+                          const SizedBox(height: 3),
                           Text(
                             post.date,
                             style:
@@ -200,15 +222,13 @@ class _FeedPageState extends State<FeedPage> {
                 ],
               ),
             ),
+
             //#post image
-            const SizedBox(
-              height: 8,
-            ),
+            const SizedBox(height: 8),
             CachedNetworkImage(
               width: MediaQuery.of(context).size.width,
               imageUrl: post.img_post,
-              placeholder: (context, url) =>
-                  const Center(child: CircularProgressIndicator()),
+              placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
               errorWidget: (context, url, error) => const Icon(Icons.error),
               fit: BoxFit.cover,
             ),
@@ -237,10 +257,10 @@ class _FeedPageState extends State<FeedPage> {
                             ),
                     ),
                     IconButton(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.share,
-                      ),
+                      onPressed: () async {
+                        await Share.share(post.img_post);
+                      },
+                      icon: const Icon(Icons.share),
                     ),
                   ],
                 )
@@ -256,7 +276,8 @@ class _FeedPageState extends State<FeedPage> {
                 overflow: TextOverflow.visible,
                 text: TextSpan(
                   text: post.caption,
-                  style: GoogleFonts.montserrat(textStyle: const TextStyle(color: Colors.black)),
+                  style: GoogleFonts.montserrat(
+                      textStyle: const TextStyle(color: Colors.black)),
                 ),
               ),
             ),
