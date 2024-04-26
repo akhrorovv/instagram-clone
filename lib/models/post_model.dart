@@ -1,6 +1,6 @@
 class Post {
   String uid = "";
-  String fullname = "";
+  String fullName = "";
   String img_user = "";
   String id = "";
   String img_post = "";
@@ -14,7 +14,7 @@ class Post {
 
   Post.fromJson(Map<String, dynamic> json)
       : uid = json['uid'],
-        fullname = json['fullname'],
+        fullName = json['fullname'],
         img_user = json['img_user'],
         img_post = json['img_post'],
         id = json['id'],
@@ -24,7 +24,7 @@ class Post {
 
   Map<String, dynamic> toJson() => {
         'uid': uid,
-        'fullname': fullname,
+        'fullname': fullName,
         'img_user': img_user,
         'id': id,
         'img_post': img_post,

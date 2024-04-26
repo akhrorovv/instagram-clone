@@ -1,8 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:instagram_clone/services/http_service.dart';
+import 'package:get/get.dart';
+import '../controllers/search_controller.dart';
 import '../models/member_model.dart';
-import '../services/db_service.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -12,66 +11,12 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-  bool isLoading = false;
-  var searchController = TextEditingController();
-  List<Member> items = [];
-
-  void _apiFollowMember(Member someone) async {
-    setState(() {
-      isLoading = true;
-    });
-    await DBService.followMember(someone);
-    setState(() {
-      someone.followed = true;
-      isLoading = false;
-    });
-    DBService.storePostsToMyFeed(someone);
-    sendNotificationToFollowedMember(someone);
-  }
-
-  void sendNotificationToFollowedMember(Member someone) async {
-    Member me = await DBService.loadMember();
-    await Network.POST(
-        Network.API_SEND_NOTIF, Network.paramsNotify(me, someone));
-  }
-
-  void _apiUnFollowMember(Member someone) async {
-    setState(() {
-      isLoading = true;
-    });
-    await DBService.unfollowMember(someone);
-    setState(() {
-      someone.followed = false;
-      isLoading = false;
-    });
-    DBService.removePostsFromMyFeed(someone);
-  }
-
-  void _apiSearchMembers(String keyword) {
-    setState(() {
-      isLoading = true;
-    });
-    DBService.searchMembers(keyword).then((users) =>
-    {
-      _resSearchMembers(users),
-    });
-  }
-
-  _resSearchMembers(List<Member> members) {
-    setState(() {
-      items = members;
-      isLoading = false;
-    });
-  }
+  final searchController = Get.find<SearchPageController>();
 
   @override
   void initState() {
     super.initState();
-    _apiSearchMembers('');
-  }
-
-  Future<void> _handleRefresh() async {
-    _apiSearchMembers('');
+    searchController.apiSearchMembers('');
   }
 
   @override
@@ -90,52 +35,56 @@ class _SearchPageState extends State<SearchPage> {
           ),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: Stack(
-          children: [
-            Container(
-              padding: const EdgeInsets.only(left: 20, right: 20),
-              child: Column(
-                children: [
-                  //#search member
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.only(left: 10, right: 10),
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                    child: TextField(
-                      style: const TextStyle(color: Colors.black87),
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                        hintText: "Search",
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
-                        icon: Icon(
-                          Icons.search,
-                          color: Colors.grey,
+      body: GetBuilder<SearchPageController>(
+        builder: (searchController){
+          return RefreshIndicator(
+            onRefresh: searchController.handleRefresh,
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.only(left: 20, right: 20),
+                  child: Column(
+                    children: [
+                      //#search member
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.only(left: 10, right: 10),
+                        height: 45,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: TextField(
+                          style: const TextStyle(color: Colors.black87),
+                          controller: searchController.searchController,
+                          decoration: const InputDecoration(
+                            hintText: "Search",
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(fontSize: 15, color: Colors.grey),
+                            icon: Icon(
+                              Icons.search,
+                              color: Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
 
-                  //#member list
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: items.length,
-                      itemBuilder: (ctx, index) {
-                        return _itemOfMember(items[index]);
-                      },
-                    ),
+                      //#member list
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: searchController.items.length,
+                          itemBuilder: (ctx, index) {
+                            return _itemOfMember(searchController.items[index]);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -158,17 +107,17 @@ class _SearchPageState extends State<SearchPage> {
               borderRadius: BorderRadius.circular(22.5),
               child: member.img_url.isEmpty
                   ? const Image(
-                image: AssetImage("assets/images/person.jpg"),
-                width: 45,
-                height: 45,
-                fit: BoxFit.cover,
-              )
+                      image: AssetImage("assets/images/person.jpg"),
+                      width: 45,
+                      height: 45,
+                      fit: BoxFit.cover,
+                    )
                   : Image.network(
-                member.img_url,
-                width: 45,
-                height: 45,
-                fit: BoxFit.cover,
-              ),
+                      member.img_url,
+                      width: 45,
+                      height: 45,
+                      fit: BoxFit.cover,
+                    ),
             ),
           ),
           const SizedBox(width: 15),
@@ -197,33 +146,36 @@ class _SearchPageState extends State<SearchPage> {
               GestureDetector(
                 onTap: () {
                   if (member.followed) {
-                    _apiUnFollowMember(member);
+                    searchController.apiUnFollowMember(member);
                   } else {
-                    _apiFollowMember(member);
+                    searchController.apiFollowMember(member);
                   }
                 },
-                child: member.followed ? Container(
-                  width: 100,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(3),
-                    border: Border.all(width: 1, color: Colors.black),
-                  ),
-                  child: const Center(
-                    child: Text("Following")
-                  ),
-                ) : Container(
-                  width: 100,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(5),
-                    // border: Border.all(width: 1, color: Colors.grey),
-                  ),
-                  child: const Center(
-                    child:Text("Follow", style: TextStyle(color: Colors.white),),
-                  ),
-                ),
+                child: member.followed
+                    ? Container(
+                        width: 100,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(3),
+                          border: Border.all(width: 1, color: Colors.black),
+                        ),
+                        child: const Center(child: Text("Following")),
+                      )
+                    : Container(
+                        width: 100,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(5),
+                          // border: Border.all(width: 1, color: Colors.grey),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            "Follow",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
               ),
             ],
           ),

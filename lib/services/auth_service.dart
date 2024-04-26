@@ -16,8 +16,7 @@ class AuthService {
     return firebaseUser!.uid;
   }
 
-  static Future<User?> signInUser(
-      BuildContext context, String email, String password) async {
+  static Future<User?> signInUser(String email, String password) async {
     try {
       _auth.signInWithEmailAndPassword(email: email, password: password);
       User? user = _auth.currentUser;
@@ -29,8 +28,7 @@ class AuthService {
     return null;
   }
 
-  static Future<User?> signUpUser(
-      BuildContext context, String name, String email, String password) async {
+  static Future<User?> signUpUser(String name, String email, String password) async {
     try {
       var authResult = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
@@ -43,7 +41,7 @@ class AuthService {
     return null;
   }
 
-  static void signOutUser(BuildContext context) async{
+  static void signOutUser() async{
     _auth.signOut();
     await Prefs.removeUserId();
   }

@@ -1,12 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:instagram_clone/services/utils_service.dart';
-
-import '../models/post_model.dart';
-import '../services/db_service.dart';
-import '../services/file_service.dart';
+import '../controllers/upload_controller.dart';
 
 class UploadPage extends StatefulWidget {
   final PageController? pageController;
@@ -18,211 +13,120 @@ class UploadPage extends StatefulWidget {
 }
 
 class _UploadPageState extends State<UploadPage> {
-  bool isLoading = false;
-  var captionController = TextEditingController();
-  final ImagePicker _picker = ImagePicker();
-  File? _image;
-
-  _moveToFeed() {
-    setState(() {
-      isLoading = false;
-    });
-    captionController.text = "";
-    _image = null;
-    widget.pageController!.animateToPage(0,
-        duration: const Duration(microseconds: 200), curve: Curves.easeIn);
-  }
-
-  _imgFromGallery() async {
-    XFile? image =
-        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-    setState(() {
-      _image = File(image!.path);
-    });
-  }
-
-  _imgFromCamera() async {
-    XFile? image =
-        await _picker.pickImage(source: ImageSource.camera, imageQuality: 50);
-    setState(() {
-      _image = File(image!.path);
-    });
-  }
-
-  void _showPicker(context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                  leading: const Icon(Iconsax.gallery5),
-                  title: const Text('Pick Photo'),
-                  onTap: () {
-                    _imgFromGallery();
-                    Navigator.of(context).pop();
-                  }),
-              ListTile(
-                leading: const Icon(Iconsax.camera),
-                title: const Text('Take Photo'),
-                onTap: () {
-                  _imgFromCamera();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  _uploadNewPost() {
-    String caption = captionController.text.toString().trim();
-    if (caption.isEmpty && _image == null) {
-      Utils.fireToast('Please select image and write caption');
-      return;
-    }
-    if (caption.isEmpty) {
-      Utils.fireToast('Please enter caption');
-      return;
-    }
-    if (_image == null) {
-      Utils.fireToast('Please select image');
-      return;
-    }
-    _apiPostImage();
-  }
-
-  void _apiPostImage() {
-    setState(() {
-      isLoading = true;
-    });
-    FileService.uploadPostImage(_image!).then((downloadUrl) => {
-          _resPostImage(downloadUrl),
-        });
-  }
-
-  void _resPostImage(String downloadUrl) {
-    String caption = captionController.text.toString().trim();
-    Post post = Post(caption, downloadUrl);
-    _apiStorePost(post);
-  }
-
-  void _apiStorePost(Post post) async {
-    // Post to posts
-    Post posted = await DBService.storePost(post);
-    // Post to feeds
-    DBService.storeFeed(posted).then((value) => {
-          _moveToFeed(),
-        });
-  }
+  final uploadController = Get.find<UploadController>();
+  PageController? pageController;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: const Text(
-            "Upload",
-            style: TextStyle(color: Colors.black),
-          ),
-          actions: [
-            IconButton(
-              onPressed: () {
-                _uploadNewPost();
-              },
-              icon: const Icon(
-                Iconsax.gallery_export,
-                color: Color.fromRGBO(193, 53, 132, 1),
-              ),
-            ),
-          ],
+        elevation: 0,
+        title: const Text(
+          "Upload",
+          style: TextStyle(color: Colors.black),
         ),
-        body: Stack(
-          children: [
-            SingleChildScrollView(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height,
-                child: Column(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        _showPicker(context);
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        height: MediaQuery.of(context).size.width,
-                        color: Colors.grey.withOpacity(0.4),
-                        child: _image == null
-                            ? const Center(
-                                child: Icon(
-                                  Iconsax.gallery_add,
-                                  size: 60,
-                                  color: Colors.grey,
-                                ),
-                              )
-                            : Stack(
-                                children: [
-                                  Image.file(
-                                    _image!,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    fit: BoxFit.cover,
+        actions: [
+          IconButton(
+            onPressed: () {
+              uploadController.uploadNewPost();
+            },
+            icon: const Icon(
+              Iconsax.gallery_export,
+              color: Color.fromRGBO(193, 53, 132, 1),
+            ),
+          ),
+        ],
+      ),
+      body: GetBuilder<UploadController>(
+        builder: (uploadController) {
+          return Stack(
+            children: [
+              SingleChildScrollView(
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height,
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          uploadController.showPicker(context);
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          height: MediaQuery.of(context).size.width,
+                          color: Colors.grey.withOpacity(0.4),
+                          child: uploadController.imageFile == null
+                              ? const Center(
+                                  child: Icon(
+                                    Iconsax.gallery_add,
+                                    size: 60,
+                                    color: Colors.grey,
                                   ),
-                                  Container(
-                                    width: double.infinity,
-                                    color: Colors.black12,
-                                    padding: EdgeInsets.all(10),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              _image = null;
-                                            });
-                                          },
-                                          icon: const Icon(
-                                              Icons.highlight_remove),
-                                          color: Colors.white,
-                                        ),
-                                      ],
+                                )
+                              : Stack(
+                                  children: [
+                                    Image.file(
+                                      uploadController.imageFile!,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      fit: BoxFit.cover,
                                     ),
-                                  ),
-                                ],
-                              ),
+                                    Container(
+                                      width: double.infinity,
+                                      color: Colors.black12,
+                                      padding: EdgeInsets.all(10),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                uploadController.imageFile =
+                                                    null;
+                                              });
+                                            },
+                                            icon: const Icon(
+                                                Icons.highlight_remove),
+                                            color: Colors.white,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
                       ),
-                    ),
-                    Container(
-                      margin:
-                          const EdgeInsets.only(left: 10, right: 10, top: 10),
-                      child: TextField(
-                        controller: captionController,
-                        style: const TextStyle(color: Colors.black),
-                        keyboardType: TextInputType.multiline,
-                        minLines: 1,
-                        maxLines: 5,
-                        decoration: const InputDecoration(
+                      Container(
+                        margin:
+                            const EdgeInsets.only(left: 10, right: 10, top: 10),
+                        child: TextField(
+                          controller: uploadController.captionController,
+                          style: const TextStyle(color: Colors.black),
+                          keyboardType: TextInputType.multiline,
+                          minLines: 1,
+                          maxLines: 5,
+                          decoration: const InputDecoration(
                             hintText: "Caption",
                             hintStyle:
-                                TextStyle(fontSize: 17, color: Colors.black38)),
+                                TextStyle(fontSize: 17, color: Colors.black38),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : const SizedBox.shrink(),
-          ],
-        ));
+              uploadController.isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : const SizedBox.shrink(),
+            ],
+          );
+        },
+      ),
+    );
   }
 }

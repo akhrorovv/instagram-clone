@@ -1,16 +1,9 @@
-import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:instagram_clone/pages/signin_page.dart';
-import 'package:instagram_clone/services/auth_service.dart';
-
-import '../models/member_model.dart';
+import '../controllers/profile_controller.dart';
 import '../models/post_model.dart';
-import '../services/db_service.dart';
-import '../services/file_service.dart';
-import '../services/utils_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -20,154 +13,13 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  bool isLoading = false;
-  int axisCount = 2;
-  List<Post> items = [];
-  File? _image;
-  String fullname = "", email = "", img_url = "";
-  int count_posts = 0, count_followers = 0, count_following = 0;
-  final ImagePicker _picker = ImagePicker();
-
-  _imgFromGallery() async {
-    XFile? image =
-        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-    print(image!.path.toString());
-    setState(() {
-      _image = File(image.path);
-    });
-    _apiChangePhoto();
-  }
-
-  _imgFromCamera() async {
-    XFile? image =
-        await _picker.pickImage(source: ImageSource.camera, imageQuality: 50);
-    print(image!.path.toString());
-    setState(() {
-      _image = File(image.path);
-    });
-    _apiChangePhoto();
-  }
-
-  _apiChangePhoto() {
-    if (_image == null) return;
-    setState(() {
-      isLoading = true;
-    });
-    FileService.uploadUserImage(_image!).then((downloadUrl) => {
-          _apiUpdateMember(downloadUrl),
-        });
-  }
-
-  _apiUpdateMember(String downloadUrl) async {
-    Member member = await DBService.loadMember();
-    member.img_url = downloadUrl;
-    await DBService.updateMember(member);
-    _apiLoadMember();
-  }
-
-  _showPicker(context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext bc) {
-        return SafeArea(
-          child: Wrap(
-            children: <Widget>[
-              ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Pick Photo'),
-                  onTap: () {
-                    _imgFromGallery();
-                    Navigator.of(context).pop();
-                  }),
-              ListTile(
-                leading: const Icon(Icons.photo_camera),
-                title: const Text('Take Photo'),
-                onTap: () {
-                  _imgFromCamera();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  _dialogRemovePost(Post post) async {
-    var result = await Utils.dialogCommon(
-        context, "Instagram", "Do you want to detele this post?", false);
-
-    if (result) {
-      setState(() {
-        isLoading = true;
-      });
-      DBService.removePost(post).then((value) => {
-            _apiLoadPosts(),
-          });
-    }
-  }
-
-  _dialogLogout() async {
-    var result = await Utils.dialogCommon(
-        context, "Instagram", "Do you want to logout?", false);
-    if (result) {
-      setState(() {
-        isLoading = true;
-      });
-      _signOutUser();
-    }
-  }
-
-  _signOutUser() {
-    AuthService.signOutUser(context);
-    Navigator.pushReplacementNamed(context, SignInPage.id);
-  }
-
-  void _apiLoadMember() {
-    setState(() {
-      isLoading = true;
-    });
-    DBService.loadMember().then((value) => {
-          _showMemberInfo(value),
-        });
-  }
-
-  void _showMemberInfo(Member member) {
-    setState(() {
-      isLoading = false;
-      fullname = member.fullname;
-      email = member.email;
-      img_url = member.img_url;
-      count_following = member.following_count;
-      count_followers = member.followers_count;
-    });
-  }
-
-  _apiLoadPosts() {
-    DBService.loadPosts().then((value) => {
-          _resLoadPosts(value),
-        });
-  }
-
-  _resLoadPosts(List<Post> posts) {
-    setState(() {
-      isLoading = false;
-      items = posts;
-      count_posts = posts.length;
-    });
-  }
+  final profileController = Get.find<ProfileController>();
 
   @override
   void initState() {
     super.initState();
-    _apiLoadMember();
-    _apiLoadPosts();
-  }
-
-  Future<void> _handleRefresh() async {
-    _apiLoadMember();
-    // photos.clear();
+    profileController.apiLoadMember();
+    profileController.apiLoadPosts();
   }
 
   @override
@@ -188,7 +40,7 @@ class _ProfilePageState extends State<ProfilePage> {
         actions: [
           IconButton(
             onPressed: () {
-              _dialogLogout();
+              profileController.dialogLogout();
             },
             icon: const Icon(Iconsax.logout),
             color: const Color.fromRGBO(193, 53, 132, 1),
@@ -196,7 +48,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _handleRefresh,
+        onRefresh: profileController.handleRefresh,
         child: Stack(
           children: [
             Container(
@@ -207,7 +59,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   //#myphoto
                   GestureDetector(
                     onTap: () {
-                      _showPicker(context);
+                      profileController.showPicker(context);
                     },
                     child: Stack(
                       children: [
@@ -222,7 +74,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(35),
-                            child: img_url.isEmpty
+                            child: profileController.img_url.isEmpty
                                 ? const Image(
                                     image:
                                         AssetImage("assets/images/person.jpg"),
@@ -231,7 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     fit: BoxFit.cover,
                                   )
                                 : Image.network(
-                                    img_url,
+                                    profileController.img_url,
                                     width: 70,
                                     height: 70,
                                     fit: BoxFit.cover,
@@ -259,7 +111,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   //#myinfos
                   const SizedBox(height: 10),
                   Text(
-                    fullname.toUpperCase(),
+                    profileController.fullname.toUpperCase(),
                     style: const TextStyle(
                       color: Colors.black,
                       fontSize: 16,
@@ -268,7 +120,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    email,
+                    profileController.email,
                     style: const TextStyle(
                       color: Colors.black54,
                       fontSize: 14,
@@ -287,7 +139,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: Column(
                               children: [
                                 Text(
-                                  count_posts.toString(),
+                                  profileController.count_posts.toString(),
                                   style: const TextStyle(
                                     color: Colors.black,
                                     fontSize: 16,
@@ -312,7 +164,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: Column(
                               children: [
                                 Text(
-                                  count_followers.toString(),
+                                  profileController.count_followers.toString(),
                                   style: const TextStyle(
                                     color: Colors.black,
                                     fontSize: 16,
@@ -337,7 +189,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: Column(
                               children: [
                                 Text(
-                                  count_following.toString(),
+                                  profileController.count_following.toString(),
                                   style: const TextStyle(
                                     color: Colors.black,
                                     fontSize: 16,
@@ -369,10 +221,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: IconButton(
                             onPressed: () {
                               setState(() {
-                                axisCount = 2;
+                                profileController.axisCount = 2;
                               });
                             },
-                            icon: axisCount == 2
+                            icon: profileController.axisCount == 2
                                 ? const Icon(Iconsax.category5)
                                 : const Icon(Iconsax.category),
                           ),
@@ -383,10 +235,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: IconButton(
                             onPressed: () {
                               setState(() {
-                                axisCount = 1;
+                                profileController.axisCount = 1;
                               });
                             },
-                            icon: axisCount == 1
+                            icon: profileController.axisCount == 1
                                 ? const Icon(Iconsax.document5)
                                 : const Icon(Iconsax.document),
                           ),
@@ -399,10 +251,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   Expanded(
                     child: GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: axisCount),
-                      itemCount: items.length,
+                          crossAxisCount: profileController.axisCount),
+                      itemCount: profileController.items.length,
                       itemBuilder: (ctx, index) {
-                        return _itemOfPost(items[index]);
+                        return _itemOfPost(profileController.items[index]);
                       },
                     ),
                   ),
@@ -423,7 +275,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _itemOfPost(Post post) {
     return GestureDetector(
       onLongPress: () {
-        _dialogRemovePost(post);
+        profileController.dialogRemovePost(post);
       },
       child: Container(
         margin: const EdgeInsets.all(5),

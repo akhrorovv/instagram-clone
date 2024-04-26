@@ -164,7 +164,7 @@ class DBService {
   static Future<Post> storePost(Post post) async {
     Member me = await loadMember();
     post.uid = me.uid;
-    post.fullname = me.fullname;
+    post.fullName = me.fullname;
     post.img_user = me.img_url;
     post.date = Utils.currentDate();
 

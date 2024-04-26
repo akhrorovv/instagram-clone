@@ -1,12 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:instagram_clone/models/member_model.dart';
-import 'package:instagram_clone/pages/signin_page.dart';
-import '../services/auth_service.dart';
-import '../services/db_service.dart';
-import '../services/pref_service.dart';
-import '../services/utils_service.dart';
-import 'home_page.dart';
+import 'package:get/get.dart';
+import '../controllers/signup_controller.dart';
 
 class SignUpPage extends StatefulWidget {
   static const String id = "signup_page";
@@ -18,62 +12,7 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  var isLoading = false;
-  var fullNameController = TextEditingController();
-  var emailController = TextEditingController();
-  var passwordController = TextEditingController();
-  var cpasswordController = TextEditingController();
-
-  _doSignUp() async {
-    String fullName = fullNameController.text.toString().trim();
-    String email = emailController.text.toString().trim();
-    String password = passwordController.text.toString().trim();
-    String cpassword = cpasswordController.text.toString().trim();
-
-    if (fullName.isEmpty || email.isEmpty || password.isEmpty) return;
-
-    if (cpassword != password) {
-      Utils.fireToast("Password and confirm password does not match");
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    AuthService.signUpUser(context, fullName, email, password).then((firebaseUser) => {
-      _getFirebaseUser(firebaseUser, Member(fullName, email)),
-    });
-  }
-
-  _getFirebaseUser(User? firebaseUser, Member member) async {
-    setState(() {
-      isLoading = false;
-    });
-    if (firebaseUser != null) {
-      _saveMemberIdToLocal(firebaseUser);
-      _saveMemberToCloud(member);
-
-      _callHomePage();
-    } else {
-      Utils.fireToast("Check your information");
-    }
-  }
-
-  _saveMemberIdToLocal(User firebaseUser)async{
-    await Prefs.saveUserId(firebaseUser.uid);
-  }
-  _saveMemberToCloud(Member member) async{
-    await DBService.storeMember(member);
-  }
-
-  _callHomePage(){
-    Navigator.pushReplacementNamed(context, HomePage.id);
-  }
-
-  _callSignInPage() {
-    Navigator.pushReplacementNamed(context, SignInPage.id);
-  }
+  final signUpController = Get.find<SignUpController>();
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +58,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           borderRadius: BorderRadius.circular(7),
                         ),
                         child: TextField(
-                          controller: fullNameController,
+                          controller: signUpController.fullNameController,
                           style: const TextStyle(color: Colors.white),
                           decoration: const InputDecoration(
                             hintText: "Fullname",
@@ -142,7 +81,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           borderRadius: BorderRadius.circular(7),
                         ),
                         child: TextField(
-                          controller: emailController,
+                          controller: signUpController.emailController,
                           style: const TextStyle(color: Colors.white),
                           decoration: const InputDecoration(
                             hintText: "Email",
@@ -165,7 +104,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           borderRadius: BorderRadius.circular(7),
                         ),
                         child: TextField(
-                          controller: passwordController,
+                          controller: signUpController.passwordController,
                           style: const TextStyle(color: Colors.white),
                           obscureText: true,
                           decoration: const InputDecoration(
@@ -189,7 +128,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           borderRadius: BorderRadius.circular(7),
                         ),
                         child: TextField(
-                          controller: cpasswordController,
+                          controller: signUpController.cpasswordController,
                           obscureText: true,
                           style: const TextStyle(color: Colors.white),
                           decoration: const InputDecoration(
@@ -206,7 +145,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       //#signin
                       GestureDetector(
                         onTap: () {
-                          _doSignUp();
+                          signUpController.doSignUp();
                         },
                         child: Container(
                           margin: const EdgeInsets.only(top: 10),
@@ -242,7 +181,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     const SizedBox(width: 10),
                     GestureDetector(
                       onTap: () {
-                        _callSignInPage();
+                        signUpController.callSignInPage();
                       },
                       child: const Text(
                         "Sign In",
@@ -257,7 +196,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
               ],
             ),
-            isLoading
+            signUpController.isLoading
                 ? const Center(
                     child: CircularProgressIndicator(),
                   )

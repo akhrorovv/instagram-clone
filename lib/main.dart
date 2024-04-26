@@ -1,11 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:instagram_clone/pages/home_page.dart';
 import 'package:instagram_clone/pages/signin_page.dart';
 import 'package:instagram_clone/pages/signup_page.dart';
 import 'package:instagram_clone/pages/splash_page.dart';
 import 'package:instagram_clone/services/notif_service.dart';
+import 'config/root_binding.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +22,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -29,6 +31,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const SplashPage(),
+      initialBinding: RootBinding(),
+
       routes: {
         SplashPage.id: (context) => const SplashPage(),
         HomePage.id: (context) => const HomePage(),
