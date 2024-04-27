@@ -1,8 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:instagram_clone/services/utils_service.dart';
-
-import '../models/member_model.dart';
-import '../models/post_model.dart';
+import '../model/member_model.dart';
+import '../model/post_model.dart';
 import 'auth_service.dart';
 import 'log_service.dart';
 
@@ -60,59 +59,44 @@ class DBService {
   }
 
   static Future<List<Member>> searchMembers(String keyword) async {
-    List<Member> members = [];
-    List<Member> resMembers = [];
-    List<Member> followingsList = [];
+    List<Member> allMembers = [];
+    List<Member> myMembers = [];
+    List<Member> result = [];
     String uid = AuthService.currentUserId();
 
-    var querySnapshot = await _firestore
+    var querySnapshot1 = await _firestore
         .collection(folder_users)
         .orderBy("email")
         .startAt([keyword]).get();
 
-    var querySnapshot1 = await _firestore
+    var querySnapshot2 = await _firestore
         .collection(folder_users)
         .doc(uid)
         .collection(folder_following)
         .get();
 
-    print('Following Members: ${followingsList.length}');
-
-    for (var result in querySnapshot.docs) {
-      Member newMember = Member.fromJson(result.data());
-      if (newMember.uid != uid) {
-        members.add(newMember);
-      }
-    }
-
     for (var result in querySnapshot1.docs) {
       Member newMember = Member.fromJson(result.data());
-      followingsList.add(newMember);
-    }
-
-    print('followingsList : ${followingsList.length}');
-
-    for (var member in members) {
-      if (followingsList.any((obj) => obj.uid == member.uid)) {
-        member.followed = true;
-        resMembers.add(member);
-      } else {
-        resMembers.add(member);
+      if (newMember.uid != uid) {
+        allMembers.add(newMember);
       }
     }
 
-    print('resMembers length: ${resMembers.length}');
+    for (var result in querySnapshot2.docs) {
+      Member newMember = Member.fromJson(result.data());
+      myMembers.add(newMember);
+    }
 
-    print('members length: ${members.length}');
+    for (var member in allMembers) {
+      if (myMembers.any((obj) => obj.uid == member.uid)) {
+        member.followed = true;
+        result.add(member);
+      } else {
+        result.add(member);
+      }
+    }
 
-    return resMembers;
-  }
-
-  static Future<Member> getOwner(String uid) async {
-    var user = await _firestore.collection(folder_users).doc(uid).get();
-    var receiver = Member.fromJson(user.data()!);
-    LogService.i(receiver.fullname);
-    return receiver;
+    return result;
   }
 
   static Future<Member> followMember(Member someone) async {
@@ -160,11 +144,10 @@ class DBService {
   }
 
   /// Post Related
-
   static Future<Post> storePost(Post post) async {
     Member me = await loadMember();
     post.uid = me.uid;
-    post.fullName = me.fullname;
+    post.fullname = me.fullname;
     post.img_user = me.img_url;
     post.date = Utils.currentDate();
 

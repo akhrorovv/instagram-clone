@@ -26,14 +26,14 @@ class NotificationModel {
         notification: Notification.fromJson(json["notification"]),
         clickAction: json["click_action"],
         registrationIds:
-        List<String>.from(json["registration_ids"].map((x) => x)),
+            List<String>.from(json["registration_ids"].map((x) => x)),
       );
 
   Map<String, dynamic> toJson() => {
-    "notification": notification!.toJson(),
-    "click_action": clickAction,
-    "registration_ids": List<dynamic>.from(registrationIds!.map((x) => x)),
-  };
+        "notification": notification!.toJson(),
+        "click_action": clickAction,
+        "registration_ids": List<dynamic>.from(registrationIds!.map((x) => x)),
+      };
 }
 
 class Notification {
@@ -46,12 +46,12 @@ class Notification {
   });
 
   factory Notification.fromJson(Map<String, dynamic> json) => Notification(
-    title: json["title"],
-    body: json["body"],
-  );
+        title: json["title"],
+        body: json["body"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "title": title,
-    "body": body,
-  };
+        "title": title,
+        "body": body,
+      };
 }

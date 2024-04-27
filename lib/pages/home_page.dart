@@ -1,14 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:iconsax/iconsax.dart';
+import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
-import 'feed_page.dart';
-import 'likes_page.dart';
-import 'profile_page.dart';
-import 'search_page.dart';
-import 'upload_page.dart';
-import 'package:get/get.dart';
-import 'package:get/get.dart';
+import 'my_feed_page.dart';
+import 'my_likes_page.dart';
+import 'my_profile_page.dart';
+import 'my_search_page.dart';
+import 'my_upload_page.dart';
 
 class HomePage extends StatefulWidget {
   static const String id = "home_page";
@@ -16,7 +14,7 @@ class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
@@ -31,57 +29,52 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: GetBuilder<HomeController>(
-        builder: (homeController) {
-          return PageView(
+    return GetBuilder<HomeController>(
+      builder: (_) {
+        return Scaffold(
+          body: PageView(
             controller: homeController.pageController,
             children: [
-              FeedPage(pageController: homeController.pageController),
-              const SearchPage(),
-              UploadPage(pageController: homeController.pageController),
-              const LikesPage(),
-              const ProfilePage(),
+              MyFeedPage(
+                pageController: homeController.pageController,
+              ),
+              const MySearchPage(),
+              MyUploadPage(
+                pageController: homeController.pageController,
+              ),
+              const MyLikesPage(),
+              const MyProfilePage(),
             ],
             onPageChanged: (int index) {
-              homeController.currentPage = index;
-              homeController.update();
+              homeController.onPageChanged(index);
             },
-          );
-        },
-      ),
-      bottomNavigationBar: CupertinoTabBar(
-        onTap: (int index) {
-          setState(() {
-            homeController.currentPage = index;
-            homeController.pageController!.animateToPage(
-              index,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeIn,
-            );
-          });
-        },
-        currentIndex: homeController.currentPage,
-        // activeColor: const Color.fromRGBO(12, 35, 229, 1.0),
-        activeColor: Colors.black,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Iconsax.home, size: 30),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Iconsax.search_normal, size: 30),
+          bottomNavigationBar: CupertinoTabBar(
+            onTap: (int index) {
+              homeController.animateToPage(index);
+            },
+            currentIndex: homeController.currentTap,
+            activeColor: const Color.fromRGBO(193, 53, 132, 1),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home, size: 32),
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.search, size: 32),
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.add_box, size: 32),
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.favorite, size: 32),
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.account_circle, size: 32),
+              )
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Iconsax.add_square, size: 30),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Iconsax.heart, size: 30),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Iconsax.profile_circle, size: 30),
-          )
-        ],
-      ),
+        );
+      },
     );
   }
 }
