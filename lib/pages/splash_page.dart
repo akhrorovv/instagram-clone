@@ -1,10 +1,7 @@
 import 'dart:async';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:get/instance_manager.dart';
-
-import '../controllers/splash_controller.dart';
+import 'package:instagram_clone/pages/signin_page.dart';
 import '../services/auth_service.dart';
 import '../services/log_service.dart';
 import '../services/notif_service.dart';
@@ -21,14 +18,63 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
+  static final FirebaseMessaging _firebaseMessaging =
+      FirebaseMessaging.instance;
 
-  final splashController = Get.find<SplashController>();
+  callNextPage(BuildContext context) {
+    if (AuthService.isLoggedIn()) {
+      // Get.offNamed(HomePage.id);
+      Navigator.pushReplacementNamed(context, HomePage.id);
+    } else {
+      // Get.offNamed(SignInPage.id);
+      Navigator.pushReplacementNamed(context, SignInPage.id);
+    }
+  }
+
+  initTimer(BuildContext context) {
+    Timer(const Duration(seconds: 2), () {
+      callNextPage(context);
+    });
+  }
+
+  initNotification() async {
+    NotificationSettings settings = await _firebaseMessaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      LogService.i('User granted permission');
+    } else {
+      LogService.e('User declined or has not accepted permission');
+    }
+
+    _firebaseMessaging.getToken().then((value) async {
+      String fcmToken = value.toString();
+      Prefs.saveFCM(fcmToken);
+      String token = await Prefs.loadFCM();
+      LogService.i("FCM Token: $token");
+    });
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      String title = message.notification!.title.toString();
+      String body = message.notification!.body.toString();
+      LogService.i(title);
+      LogService.i(body);
+      NotifService().showLocalNotification(title, body);
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    splashController.initTimer(context);
-    splashController.initNotification();
+    initTimer(context);
+    initNotification();
   }
 
   @override
@@ -37,13 +83,15 @@ class _SplashPageState extends State<SplashPage> {
       body: Container(
         width: MediaQuery.of(context).size.width,
         decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
               Color.fromRGBO(193, 53, 132, 1),
               Color.fromRGBO(131, 58, 180, 1),
-            ])),
+            ],
+          ),
+        ),
         child: const Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -52,9 +100,10 @@ class _SplashPageState extends State<SplashPage> {
                 child: Text(
                   "Instagram",
                   style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 45,
-                      fontFamily: "Billabong"),
+                    color: Colors.white,
+                    fontSize: 45,
+                    fontFamily: "Billabong",
+                  ),
                 ),
               ),
             ),

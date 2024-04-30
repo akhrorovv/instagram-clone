@@ -31,6 +31,13 @@ class DBService {
         .set(member.toJson());
   }
 
+  static Future<Member> getOwner(String uid) async {
+    var user = await _firestore.collection(folder_users).doc(uid).get();
+    var receiver = Member.fromJson(user.data()!);
+    LogService.i(receiver.fullname);
+    return receiver;
+  }
+
   static Future<Member> loadMember() async {
     String uid = AuthService.currentUserId();
     var value = await _firestore.collection(folder_users).doc(uid).get();

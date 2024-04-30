@@ -1,8 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../model/member_model.dart';
 import '../model/post_model.dart';
 import '../services/db_service.dart';
+import '../services/http_service.dart';
 import '../services/utils_service.dart';
 
 class MyFeedPage extends StatefulWidget {
@@ -28,6 +29,15 @@ class _MyFeedPageState extends State<MyFeedPage> {
       isLoading = false;
       post.liked = true;
     });
+
+    var owner = await DBService.getOwner(post.uid);
+    sendNotificationToLikedMember(owner);
+  }
+
+  void sendNotificationToLikedMember(Member someone) async {
+    Member me = await DBService.loadMember();
+    await Network.POST(
+        Network.API_SEND_NOTIF, Network.notifyLike(me, someone));
   }
 
   void _apiPostUnLike(Post post) async {
@@ -94,10 +104,10 @@ class _MyFeedPageState extends State<MyFeedPage> {
           IconButton(
             onPressed: () {
               widget.pageController!.animateToPage(2,
-                  duration: Duration(microseconds: 200), curve: Curves.easeIn);
+                  duration: const Duration(microseconds: 200), curve: Curves.easeIn);
             },
-            icon: Icon(Icons.camera_alt),
-            color: Color.fromRGBO(193, 53, 132, 1),
+            icon: const Icon(Icons.camera_alt),
+            color: const Color.fromRGBO(193, 53, 132, 1),
           ),
         ],
       ),

@@ -35,4 +35,13 @@ class Network {
         notification: notification, registrationIds: registrationIds);
     return notificationModel.toJson();
   }
+
+  static Map<String, dynamic> notifyLike(Member sender, Member receiver) {
+    Notification notification =
+    Notification(title: "Liked", body: "${sender.fullname} has just been liked your post");
+    List<String>? ids = [receiver.device_token];
+    NotificationModel model =
+    NotificationModel(notification: notification, registrationIds: ids);
+    return model.toJson();
+  }
 }
